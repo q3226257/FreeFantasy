@@ -32,30 +32,38 @@ class Model(pygame.sprite.Sprite):
         go_map.set_focus(50, 50)
 
     # 行走
-    def walk(self, direct):
-        if direct == UP:
-            self.rect.top -= self.info.speed
-        elif direct == DOWN:
-            self.rect.top += self.info.speed
-        elif direct == LEFT:
-            self.rect.left -= self.info.speed
-        elif direct == RIGHT:
-            self.rect.left += self.info.speed
+    def walk(self):
         self.c_map.set_focus(self.rect.centerx, self.rect.centery)
+
+        if not self.info.control_walk_speed():
+            return
+        press_key = pygame.key.get_pressed()
+
+        def rel_walk(direct):
+            if direct == UP:
+                self.rect.top -= 8
+            elif direct == DOWN:
+                self.rect.top += 8
+            elif direct == LEFT:
+                self.rect.left -= 8
+            elif direct == RIGHT:
+                self.rect.left += 8
+
+        if press_key[pygame.K_UP]:
+            rel_walk(UP)
+        elif press_key[pygame.K_DOWN]:
+            rel_walk(DOWN)
+        elif press_key[pygame.K_LEFT]:
+            rel_walk(LEFT)
+        elif press_key[pygame.K_RIGHT]:
+            rel_walk(RIGHT)
+        else:
+            pass
 
     # 每帧更新
     def update(self, dt):
-        key = pygame.key.get_pressed()
-        if key[pygame.K_UP]:
-            self.walk(UP)
-        elif key[pygame.K_DOWN]:
-            self.walk(DOWN)
-        elif key[pygame.K_LEFT]:
-            self.walk(LEFT)
-        elif key[pygame.K_RIGHT]:
-            self.walk(RIGHT)
-        else:
-            pass
+        # 行走
+        self.walk()
 
 
 class Warrior(Model):

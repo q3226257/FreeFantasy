@@ -13,7 +13,7 @@ def start():
         war.go(c_map)
         maps[Tower.NAME] = c_map
 
-    c_map.update(clock.tick(30))
+    c_map.update(clock.tick(60))
 
 
 if __name__ == '__main__':

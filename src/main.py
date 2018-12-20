@@ -8,8 +8,8 @@ maps = {}
 def start():
     c_map = maps.get(Tower.NAME)
     if c_map is None:
-        c_map = Tower(screen)
-        war = Warrior()
+        c_map = First(screen)
+        war = Warrior(c_map.get_enter_location())
         war.go(c_map)
         maps[Tower.NAME] = c_map
 

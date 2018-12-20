@@ -3,6 +3,7 @@ from pygame import *
 import pygame
 from map.Map import *
 from character.HeroInfo import *
+from constant.Constant import *
 
 LEFT = 1
 RIGHT = 2
@@ -38,6 +39,8 @@ class Model(pygame.sprite.Sprite):
         if not self.info.control_walk_speed():
             return
         press_key = pygame.key.get_pressed()
+        last_rect = self.rect.copy()
+        collide_rect = self.rect.copy()
 
         def rel_walk(direct):
             if direct == UP:
@@ -59,17 +62,23 @@ class Model(pygame.sprite.Sprite):
             rel_walk(RIGHT)
         else:
             pass
+        if len(self.c_map.has_collide(collide_rect)) <= 0:
+            self.rect = last_rect
 
     # 每帧更新
     def update(self, dt):
         # 行走
         self.walk()
 
+    # def get_collide_rect(self):
+    #     top = self.rect.top + 60
+    #     return pygame.Rect(self.rect.left, top, self.rect.width, 5)
+
 
 class Warrior(Model):
-    def __init__(self, *groups):
+    def __init__(self, left_top: (int, int), *groups):
         img_path = 'resource/sprites/player.png'
-        rect = pygame.Rect((100, 100), (64, 64))
+        rect = pygame.Rect((left_top[0], left_top[1]), (64, 64))
         super(Warrior, self).__init__(img_path, rect, XiangYu(), *groups)
 
 

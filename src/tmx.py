@@ -1,3 +1,5 @@
+# encoding utf8
+
 # "Tiled" TMX loader/renderer and more
 # Copyright 2012 Richard Jones <richard@mechanicalcat.net>
 # This code is placed in the Public Domain.
@@ -718,7 +720,7 @@ class TileMap(object):
 
     @classmethod
     def load(cls, filename, viewport):
-        with open(filename) as f:
+        with open(filename, encoding='utf-8') as f:
             map = ElementTree.fromstring(f.read())
 
         # get most general map informations and create a surface

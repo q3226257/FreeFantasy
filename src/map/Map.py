@@ -13,8 +13,6 @@ class Map:
         self.screen = screen
         self.map: TileMap = None
 
-    def update(self, fps):
-        pass
 
     def get_enter_location(self) -> (int, int):
         pass

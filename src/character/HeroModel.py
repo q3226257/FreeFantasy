@@ -4,53 +4,81 @@ import pygame
 from map.Map import *
 from character.HeroInfo import *
 from constant.Constant import *
+import math
 
-LEFT = 1
-RIGHT = 2
-DOWN = 3
-UP = 4
+"""
+精灵组 pygame.sprite.AbstractGroup
+精灵 pygame.sprite.Sprite
+可以将精灵加入到精灵组一起进行update操作
+
+tmx.TileMap 可以调用 layers.append()
+将精灵或者精灵组加入到图层，以便进行update
+
+"""
+
+LEFT = "LEFT"
+RIGHT = "RIGHT"
+DOWN = "DOWN"
+UP = "UP"
+
+# 先创建一个地图精灵组
+hero_sprites = tmx.SpriteLayer()
 
 
 class Model(pygame.sprite.Sprite):
+    def split_image(self, ):
+        img = pygame.image.load(self.img_path)
+        return dict(
+            DOWN=[img.subsurface((0, 0), (64, 64)), img.subsurface((64, 0), (64, 64))],
+            UP=[img.subsurface((0, 64), (64, 64)), img.subsurface((64, 64), (64, 64))],
+            LEFT=[img.subsurface((0, 128), (64, 64)), img.subsurface((64, 128), (64, 64))],
+            RIGHT=[img.subsurface((0, 192), (64, 64)), img.subsurface((64, 192), (64, 64))])
+
     def __init__(self, img_path, rect, info: BaseInfo, *groups):
-        # 先创建一个地图精灵组
-        self.layer = tmx.SpriteLayer()
-        super(Model, self).__init__(self.layer, *groups)
+        super(Model, self).__init__(hero_sprites, *groups)
+        self.img_path = img_path
         # 一些必要属性
-        self.image = pygame.image.load(img_path)
-        self.imageDefault = self.image.copy()
-        self.image.scroll(0, -64)
+        self.images = self.split_image()
+        # self.imageDefault = self.image.copy()
+        self.image = self.images[DOWN][0]
         self.rect = rect
         # 该模型的属性
         self.info = info
-        # 装载精灵的对象
+        # 装载精灵的地图
         self.c_map: Map = None
+        self.hold_times = 0
+        self.threshold_times = 10
 
     # 进入一个新的地图
     def go(self, go_map: Map):
         self.c_map = go_map
-        go_map.append_layer(self.layer)
-        go_map.set_focus(50, 50)
+        go_map.append_layer(hero_sprites)
+        go_map.set_focus(self.rect.centerx, self.rect.centery)
 
     # 行走
-    def walk(self):
+    def walk(self, dt):
+        """
+        行走操作
+        :param dt:更新间隔时间
+        """
         self.c_map.set_focus(self.rect.centerx, self.rect.centery)
 
-        if not self.info.control_walk_speed():
-            return
         press_key = pygame.key.get_pressed()
         last_rect = self.rect.copy()
-        collide_rect = self.rect.copy()
+
+        dis = int(dt * self.info.speed + 1)
 
         def rel_walk(direct):
+            self.hold_times += 1
+            self.check_update_img(self.images[direct])
             if direct == UP:
-                self.rect.top -= 8
+                self.rect.top -= dis
             elif direct == DOWN:
-                self.rect.top += 8
+                self.rect.top += dis
             elif direct == LEFT:
-                self.rect.left -= 8
+                self.rect.left -= dis
             elif direct == RIGHT:
-                self.rect.left += 8
+                self.rect.left += dis
 
         if press_key[pygame.K_UP]:
             rel_walk(UP)
@@ -62,17 +90,21 @@ class Model(pygame.sprite.Sprite):
             rel_walk(RIGHT)
         else:
             pass
-        if len(self.c_map.has_collide(collide_rect)) <= 0:
-            self.rect = last_rect
+        # if len(self.c_map.has_collide(collide_rect)) <= 0:
+        #     self.rect = last_rect
 
     # 每帧更新
     def update(self, dt):
         # 行走
-        self.walk()
+        self.walk(dt)
 
-    # def get_collide_rect(self):
-    #     top = self.rect.top + 60
-    #     return pygame.Rect(self.rect.left, top, self.rect.width, 5)
+    def check_update_img(self, direct_img):
+        if self.hold_times > self.threshold_times:
+            self.hold_times = 0
+            if self.image == direct_img[0]:
+                self.image = direct_img[1]
+            else:
+                self.image = direct_img[0]
 
 
 class Warrior(Model):
@@ -80,109 +112,3 @@ class Warrior(Model):
         img_path = 'resource/sprites/player.png'
         rect = pygame.Rect((left_top[0], left_top[1]), (64, 64))
         super(Warrior, self).__init__(img_path, rect, XiangYu(), *groups)
-
-
-class Player(pygame.sprite.Sprite):
-    def __init__(self, location, orientation, *groups):
-        super(Player, self).__init__(*groups)
-        self.image = pygame.image.load('resource/sprites/player.png')
-        self.imageDefault = self.image.copy()
-        self.rect = pygame.Rect(location, (64, 64))
-        self.orient = orientation
-        self.holdTime = 0
-        self.walking = False
-        self.dx = 0
-        self.step = 'rightFoot'
-        # Set default orientation
-        self.setSprite()
-
-    def setSprite(self):
-        # Resets the player sprite sheet to its default position
-        # and scrolls it to the necessary position for the current orientation
-        self.image = self.imageDefault.copy()
-        if self.orient == 'up':
-            self.image.scroll(0, -64)
-        elif self.orient == 'down':
-            self.image.scroll(0, 0)
-        elif self.orient == 'left':
-            self.image.scroll(0, -128)
-        elif self.orient == 'right':
-            self.image.scroll(0, -192)
-
-    def update(self, dt):
-        key = pygame.key.get_pressed()
-        # Setting orientation and sprite based on key input:
-        if key[pygame.K_UP]:
-            if not self.walking:
-                if self.orient != 'up':
-                    self.orient = 'up'
-                    self.setSprite()
-                self.holdTime += dt
-        elif key[pygame.K_DOWN]:
-            if not self.walking:
-                if self.orient != 'down':
-                    self.orient = 'down'
-                    self.setSprite()
-                self.holdTime += dt
-        elif key[pygame.K_LEFT]:
-            if not self.walking:
-                if self.orient != 'left':
-                    self.orient = 'left'
-                    self.setSprite()
-                self.holdTime += dt
-        elif key[pygame.K_RIGHT]:
-            if not self.walking:
-                if self.orient != 'right':
-                    self.orient = 'right'
-                    self.setSprite()
-                self.holdTime += dt
-        else:
-            self.holdTime = 0
-            self.step = 'rightFoot'
-        # Walking mode enabled if a button is held for 0.1 seconds
-        if self.holdTime >= 100:
-            self.walking = True
-        lastRect = self.rect.copy()
-        # Walking at 8 pixels per frame in the direction the player is facing
-        if self.walking and self.dx < 64:
-            if self.orient == 'up':
-                self.rect.y -= 0
-            elif self.orient == 'down':
-                self.rect.y += 8
-            elif self.orient == 'left':
-                self.rect.x -= 8
-            elif self.orient == 'right':
-                self.rect.x += 8
-            self.dx += 8
-            # Collision detection:
-            # Reset to the previous rectangle if player collides
-            # with anything in the foreground layer
-            # if len(game.tilemap.layers['triggers'].collide(self.rect,
-            #                                                'solid')) > 0:
-            self.rect = lastRect
-            # Area entry detection:
-            # elif len(game.tilemap.layers['triggers'].collide(self.rect,
-            #                                                  'entry')) > 0:
-            #     entryCell = game.tilemap.layers['triggers'].find('entry')[0]
-            #     game.fadeOut()
-            #     game.initArea(entryCell['entry'])
-
-            return
-        # Switch to the walking sprite after 32 pixels
-        if self.dx == 32:
-            # Self.step keeps track of when to flip the sprite so that
-            # the character appears to be taking steps with different feet.
-            if (self.orient == 'up' or
-                self.orient == 'down') and self.step == 'leftFoot':
-                self.image = pygame.transform.flip(self.image, True, False)
-                self.step = 'rightFoot'
-            else:
-                self.image.scroll(-64, 0)
-                self.step = 'leftFoot'
-        # After traversing 64 pixels, the walking animation is done
-        if self.dx == 64:
-            self.walking = False
-            self.setSprite()
-            self.dx = 0
-
-        # game.tilemap.set_focus(self.rect.x, self.rect.y)

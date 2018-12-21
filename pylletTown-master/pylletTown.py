@@ -66,7 +66,7 @@ class Player(pygame.sprite.Sprite):
         # Walking at 8 pixels per frame in the direction the player is facing 
         if self.walking and self.dx < 64:
             if self.orient == 'up':
-                self.rect.y -= 0
+                self.rect.y -= 8
             elif self.orient == 'down':
                 self.rect.y += 8
             elif self.orient == 'left':
@@ -155,15 +155,17 @@ class Game(object):
         """Animate the screen fading to black for entering a new area"""
         clock = pygame.time.Clock()
         blackRect = pygame.Surface(self.screen.get_size())
-        blackRect.set_alpha(100)
-        blackRect.fill((0, 0, 0))
+        blackRect.set_alpha(80)
+        # blackRect.fill((0, 0, 0))
         # Continuously draw a transparent black rectangle over the screen
         # to create a fadeout effect
-        for i in range(0, 5):
-            clock.tick(15)
+        print("======out")
+        for i in range(0, 1):
+            clock.tick(5)
+            print("======in")
             self.screen.blit(blackRect, (0, 0))
             pygame.display.flip()
-        clock.tick(15)
+        # clock.tick(15)
         screen.fill((255, 255, 255, 50))
         pygame.display.flip()
 

@@ -1,5 +1,5 @@
 import pygame
-from src import tmx
+from lib import tmx
 
 
 class Player(pygame.sprite.Sprite):

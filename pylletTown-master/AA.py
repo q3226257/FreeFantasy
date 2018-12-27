@@ -1,5 +1,5 @@
 import pygame
-from src import tmx
+from lib import tmx
 
 
 def start():
